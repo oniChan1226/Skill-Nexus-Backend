@@ -39,6 +39,7 @@ export const signUpSchema = Joi.object({
         twitter: Joi.string().uri().allow(""),
         portfolio: Joi.string().uri().allow(""),
     }).optional(),
+    agreement: Joi.boolean().optional(),
 })
     .required()
     .messages({

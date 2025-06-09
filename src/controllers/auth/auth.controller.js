@@ -86,13 +86,21 @@ const signup = asyncHandler(async (req, res) => {
 
     const user = await User.create({ ...req.body });
 
-    return res.status(201).json(
-        new ApiResponse(
-            201,
-            { user },
-            "Registered successfully"
-        )
-    );
+    user.lastLogin = new Date();
+    await user.save();
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+
+    return res.status(201)
+        .cookie("accessToken", accessToken, { ...options })
+        .cookie("refreshToken", refreshToken, { ...options })
+        .json(
+            new ApiResponse(
+                201,
+                { user },
+                "Registered successfully"
+            )
+        );
 });
 
 const login = asyncHandler(async (req, res) => {
