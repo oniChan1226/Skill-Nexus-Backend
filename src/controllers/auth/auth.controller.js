@@ -1,4 +1,5 @@
 import { User } from "../../models/index.js";
+import { getAvailableSuggestions } from "../../utils/helpers.js";
 import { ApiError, ApiResponse, asyncHandler } from "../../utils/index.js"
 
 const options = {
@@ -61,48 +62,55 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const signup = asyncHandler(async (req, res) => {
-
     const { email, username } = req.body;
 
-    const doesUserExist = await User.findOne({
-        $or: [{ email }, { username }]
+    const existingUser = await User.findOne({
+        $or: [{ email }, { username }],
     }).lean();
 
-    if (doesUserExist) {
-        throw new ApiError(409, "User already exists with this email or username");
+    if (existingUser) {
+        let message = "User already exists with this ";
+        let suggestions = [];
+        if (existingUser.email === email && existingUser.username === username) {
+            message += "email and username";
+        } else if (existingUser.email === email) {
+            message += "email";
+        } else {
+            message += "username";
+            suggestions = await getAvailableSuggestions(username, 3);
+            throw new ApiError(409, message, suggestions);
+        }
+
+        throw new ApiError(409, message);
     }
 
     const user = await User.create({ ...req.body });
 
-    return res.status(201)
-        .json(
-            new ApiResponse(
-                201,
-                { user: user },
-                "Registered successfully",
-            )
-        );
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            { user },
+            "Registered successfully"
+        )
+    );
 });
 
 const login = asyncHandler(async (req, res) => {
+    const { credential, password } = req.body;
 
-    const { email, username, password } = req.body;
+    if (!credential || !password) {
+        throw new ApiError(400, "Credential and password are required");
+    }
 
-    if (!email && !username) throw new ApiError(400, "Either email or username is required");
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credential);
 
-    const user = await User.findOne({
-        $or: [
-            email ? { email } : null,
-            username ? { username } : null,
-        ].filter(Boolean),
-    });
+    const user = await User.findOne(isEmail ? { email: credential } : { username: credential });
 
     if (!user) {
-        throw new ApiError(404, "No user found against this email or username");
+        throw new ApiError(404, "Invalid username or email");
     }
 
     const doesPasswordMatch = await user.isPasswordCorrect(password);
-
     if (!doesPasswordMatch) {
         throw new ApiError(401, "Invalid password");
     }
@@ -110,17 +118,14 @@ const login = asyncHandler(async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user?._id);
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-    return res.status(200)
+    return res
+        .status(200)
         .cookie("accessToken", accessToken, { ...options })
         .cookie("refreshToken", refreshToken, { ...options })
         .json(
-            new ApiResponse(
-                200,
-                { user: user },
-                "Logged in successfully",
-            )
+            new ApiResponse(200, { user }, "Logged in successfully")
         );
 });
 
@@ -130,10 +135,10 @@ const logOut = asyncHandler(async (req, res) => {
         {
             $unset: { refreshToken: 1 },
         },
-        {new: true}
+        { new: true }
     );
 
-    if(!user) {
+    if (!user) {
         throw new ApiError(404, "user not found")
     }
 
@@ -146,9 +151,54 @@ const logOut = asyncHandler(async (req, res) => {
     );
 });
 
+const me = asyncHandler(async (req, res) => {
+    const { user } = req;
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { user },
+            "User fetched successfully"
+        )
+    );
+});
+
+const validateUsername = asyncHandler(async (req, res) => {
+    const { username } = req.query;
+
+    const existingUser = await User.findOne({ username }).lean();
+    const isAvailable = !existingUser;
+    let suggestions = [];
+
+    if (!isAvailable) {
+        suggestions = generateUsernameSuggestions(username, 3);
+        const availableSuggestions = await Promise.all(
+            suggestions.map(async (suggestion) => {
+                const user = await User.findOne({ username: suggestion }).lean();
+                return user ? null : suggestion;
+            })
+        );
+
+        suggestions = [...new Set(availableSuggestions.filter(Boolean))].slice(0, 3);
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                available: isAvailable,
+                suggestions: isAvailable ? [] : suggestions,
+            },
+            "Checked successfully"
+        )
+    );
+});
+
 export {
     refreshAccessToken,
     signup,
     login,
     logOut,
+    me,
+    validateUsername,
 };
