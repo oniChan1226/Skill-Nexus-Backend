@@ -39,6 +39,7 @@ export const signUpSchema = Joi.object({
         twitter: Joi.string().uri().allow(""),
         portfolio: Joi.string().uri().allow(""),
     }).optional(),
+    agreement: Joi.boolean().optional(),
 })
     .required()
     .messages({
@@ -46,19 +47,16 @@ export const signUpSchema = Joi.object({
     });;
 
 export const loginSchema = Joi.object({
-    email: Joi.string().email().trim().lowercase().messages({
-        "string.email": "Email must be a valid email address",
+    credential: Joi.string().trim().lowercase().messages({
+        "string.empty": "Credential must be a valid email or username",
     }),
-    username: Joi.string().alphanum().min(3).max(30),
     password: Joi.string().required().messages({
         "string.empty": "Password is required",
         "any.required": "Password is required",
     }),
 })
-    .xor("email", "username")
     .required()
     .messages({
         "object.missing": "Either email or username is required",
-        "object.xor": "Please provide either email or username (not both)",
     });
 
