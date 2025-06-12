@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { User } from "../../models/index.js";
 import { getAvailableSuggestions } from "../../utils/helpers.js";
 import { ApiError, ApiResponse, asyncHandler } from "../../utils/index.js"
@@ -15,9 +16,7 @@ const generateAccessAndRefreshToken = async function (userId) {
 
         userInstance.refreshToken = refreshToken;
 
-        await userInstance.save({ validateBeforeSave: false }).catch((error) => {
-            throw new ApiError(500, error?.message || "Failed to save refresh token");
-        });
+        await userInstance.save({ validateBeforeSave: false });
 
         return { accessToken, refreshToken };
     } catch (error) {
@@ -171,42 +170,10 @@ const me = asyncHandler(async (req, res) => {
     );
 });
 
-const validateUsername = asyncHandler(async (req, res) => {
-    const { username } = req.query;
-
-    const existingUser = await User.findOne({ username }).lean();
-    const isAvailable = !existingUser;
-    let suggestions = [];
-
-    if (!isAvailable) {
-        suggestions = generateUsernameSuggestions(username, 3);
-        const availableSuggestions = await Promise.all(
-            suggestions.map(async (suggestion) => {
-                const user = await User.findOne({ username: suggestion }).lean();
-                return user ? null : suggestion;
-            })
-        );
-
-        suggestions = [...new Set(availableSuggestions.filter(Boolean))].slice(0, 3);
-    }
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            {
-                available: isAvailable,
-                suggestions: isAvailable ? [] : suggestions,
-            },
-            "Checked successfully"
-        )
-    );
-});
-
 export {
     refreshAccessToken,
     signup,
     login,
     logOut,
     me,
-    validateUsername,
 };
