@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import { User } from "../../models/index.js";
-import { getAvailableSuggestions } from "../../utils/helpers.js";
 import { ApiError, ApiResponse, asyncHandler } from "../../utils/index.js"
 
 const options = {
@@ -61,26 +60,14 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const signup = asyncHandler(async (req, res) => {
-    const { email, username } = req.body;
+    const { email } = req.body;
 
     const existingUser = await User.findOne({
-        $or: [{ email }, { username }],
+        email: email,
     }).lean();
 
     if (existingUser) {
-        let message = "User already exists with this ";
-        let suggestions = [];
-        if (existingUser.email === email && existingUser.username === username) {
-            message += "email and username";
-        } else if (existingUser.email === email) {
-            message += "email";
-        } else {
-            message += "username";
-            suggestions = await getAvailableSuggestions(username, 3);
-            throw new ApiError(409, message, suggestions);
-        }
-
-        throw new ApiError(409, message);
+        throw new ApiError(409, "User already exists with this email");
     }
 
     const user = await User.create({ ...req.body });
@@ -103,18 +90,16 @@ const signup = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-    const { credential, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!credential || !password) {
-        throw new ApiError(400, "Credential and password are required");
+    if (!email || !password) {
+        throw new ApiError(400, "Email and password are required");
     }
 
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credential);
-
-    const user = await User.findOne(isEmail ? { email: credential } : { username: credential });
+    const user = await User.findOne({email: email});
 
     if (!user) {
-        throw new ApiError(404, "Invalid username or email");
+        throw new ApiError(404, "User not found with specified Email");
     }
 
     const doesPasswordMatch = await user.isPasswordCorrect(password);
