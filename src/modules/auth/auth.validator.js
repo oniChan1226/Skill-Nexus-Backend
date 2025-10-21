@@ -26,6 +26,8 @@ export const signupSchema = z.object({
     .optional()
     .or(z.literal("")),
 
+  profession: z.string(),
+
   bio: z
     .string()
     .max(250, "Bio cannot exceed 250 characters")
@@ -50,6 +52,6 @@ export const signupSchema = z.object({
 });
 
 export const loginSchema = z.object({
-    email: z.email(),
-    password: z.string().min(6),
+  email: z.email(),
+  password: z.string().min(6),
 })
