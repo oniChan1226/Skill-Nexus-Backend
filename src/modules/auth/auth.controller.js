@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { User } from "../../models/index.js";
 import { ApiError, ApiResponse, asyncHandler } from "../../utils/index.js"
+import { SkillProfileModel } from "../../models/skillProfile.model.js";
 
 const options = {
     httpOnly: true,
@@ -75,6 +76,10 @@ const signup = asyncHandler(async (req, res) => {
     user.lastLogin = new Date();
     await user.save();
 
+    await SkillProfileModel.create({
+        userId: user._id,
+    });
+
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
     return res.status(201)
@@ -96,7 +101,7 @@ const login = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Email and password are required");
     }
 
-    const user = await User.findOne({email: email});
+    const user = await User.findOne({ email: email });
 
     if (!user) {
         throw new ApiError(404, "User not found with specified Email");
