@@ -26,7 +26,7 @@ export const signupSchema = z.object({
     .optional()
     .or(z.literal("")),
 
-  profession: z.string(),
+  profession: z.string().optional(),
 
   bio: z
     .string()

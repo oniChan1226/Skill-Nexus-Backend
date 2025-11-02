@@ -24,7 +24,7 @@ const validateRequest = (schema) => (req, res, next) => {
     if (error instanceof ZodError) {
       const errorMessages =
         error.errors?.map((e) => e.message).join(", ") || "Invalid request data";
-      return next(new ApiError(400, errorMessages));
+      return next(new ApiError(400, errorMessages, error));
     }
 
     // Pass other errors (like ApiError or unexpected ones)
