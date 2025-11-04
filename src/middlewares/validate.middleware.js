@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import { ZodError } from "zod";
 
-const validateRequest = (schema) => (req, res, next) => {
+const validateRequest = (schema, source = "body") => (req, res, next) => {
   try {
     // Check if schema exists and is a valid Zod schema
     if (!schema || typeof schema.parse !== "function") {
@@ -9,16 +9,24 @@ const validateRequest = (schema) => (req, res, next) => {
       throw new ApiError(500, "Internal server error: invalid validation schema");
     }
 
-    // Check for empty body (e.g., undefined or empty object)
-    if (!req.body || Object.keys(req.body).length === 0) {
+    // Determine what data to validate
+    const dataToValidate = source === "query" ? req.query : req.body;
+
+    // Check for empty body only when validating body (not query)
+    if (source === "body" && (!req.body || Object.keys(req.body).length === 0)) {
       throw new ApiError(400, "Request body is missing or empty");
     }
 
     // Run validation
-    const validatedData = schema.parse(req.body);
+    const validatedData = schema.parse(dataToValidate);
 
-    // Assign sanitized data back to req.body
-    req.body = validatedData;
+    // Assign sanitized data back to the appropriate location
+    if (source === "query") {
+      Object.assign(req.query, validatedData);
+    } else {
+      Object.assign(req.body, validatedData);
+    }
+
     next();
   } catch (error) {
     if (error instanceof ZodError) {

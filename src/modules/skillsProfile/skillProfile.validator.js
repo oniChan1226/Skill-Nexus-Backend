@@ -60,3 +60,20 @@ export const requiredSkillSchema = z.object({
         })
         .optional(),
 });
+
+// ===== Skill Trading Query Validation =====
+export const skillTradingQuerySchema = z.object({
+    offeredSkill: z.string().optional(),
+    requiredSkill: z.string().optional(),
+    proficiencyLevel: z.enum(["beginner", "intermediate", "expert"]).optional(),
+    learningPriority: z.enum(["high", "medium", "low"]).optional(),
+    categories: z.string().optional(), // Comma-separated string
+    country: z.string().optional(),
+    city: z.string().optional(),
+    minRating: z.string().regex(/^\d+(\.\d+)?$/, "Must be a valid number").optional(),
+    sortBy: z.enum(["rating", "totalExchanges", "createdAt"]).optional(),
+    sortOrder: z.enum(["asc", "desc"]).optional(),
+    page: z.string().regex(/^\d+$/, "Must be a valid number").optional(),
+    limit: z.string().regex(/^\d+$/, "Must be a valid number").optional(),
+});
+

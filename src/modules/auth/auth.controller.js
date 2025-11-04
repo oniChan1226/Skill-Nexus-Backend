@@ -61,17 +61,21 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const signup = asyncHandler(async (req, res) => {
-    const { email } = req.body;
+    const { email, name } = req.body;
 
-    const existingUser = await User.findOne({
-        email: email,
-    }).lean();
-
+    const existingUser = await User.findOne({ email }).lean();
     if (existingUser) {
         throw new ApiError(409, "User already exists with this email");
     }
 
-    const user = await User.create({ ...req.body });
+    // 🧩 Generate a default avatar using DiceBear (you can pick any style)
+    const dicebearAvatar = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(name || email.split("@")[0])}`;
+
+    // 🆕 Create user with default avatar
+    const user = await User.create({
+        ...req.body,
+        profileImage: dicebearAvatar
+    });
 
     user.lastLogin = new Date();
     await user.save();
