@@ -7,227 +7,158 @@ import connectDb from "../db/index.js";
 
 dotenv.config();
 
-// -----------------------------------------------------------------------------
-// USERS (30 realistic diverse sample users)
-// -----------------------------------------------------------------------------
-const baseUsers = [
-  { name: "Alice Johnson", email: "alice.johnson@example.com", profession: "Software Engineer", address: { country: "USA", city: "San Francisco" } },
-  { name: "Bob Smith", email: "bob.smith@example.com", profession: "Senior Backend Developer", address: { country: "USA", city: "New York" } },
-  { name: "Carol Martinez", email: "carol.martinez@example.com", profession: "UI/UX Designer", address: { country: "Spain", city: "Barcelona" } },
-  { name: "David Chen", email: "david.chen@example.com", profession: "Data Scientist", address: { country: "Singapore", city: "Singapore" } },
-  { name: "Emma Wilson", email: "emma.wilson@example.com", profession: "Mobile Developer", address: { country: "UK", city: "London" } },
-  { name: "Frank Garcia", email: "frank.garcia@example.com", profession: "DevOps Engineer", address: { country: "USA", city: "Austin" } },
-  { name: "Grace Lee", email: "grace.lee@example.com", profession: "Frontend Developer", address: { country: "Canada", city: "Toronto" } },
-  { name: "Henry Taylor", email: "henry.taylor@example.com", profession: "Game Developer", address: { country: "USA", city: "Seattle" } },
-  { name: "Iris Patel", email: "iris.patel@example.com", profession: "Security Engineer", address: { country: "India", city: "Mumbai" } },
-  { name: "Jack Robinson", email: "jack.robinson@example.com", profession: "Junior Developer", address: { country: "Australia", city: "Sydney" } },
+const USERS = [
+  { name: "Naruto Uzumaki", email: "naruto.uzumaki@example.com", profession: "Frontend Developer", address: { country: "Japan", city: "Konoha" } },
+  { name: "Sasuke Uchiha", email: "sasuke.uchiha@example.com", profession: "Backend Developer", address: { country: "Japan", city: "Konoha" } },
+  { name: "Sakura Haruno", email: "sakura.haruno@example.com", profession: "UI/UX Designer", address: { country: "Japan", city: "Konoha" } },
+  { name: "Kakashi Hatake", email: "kakashi.hatake@example.com", profession: "Data Scientist", address: { country: "Japan", city: "Konoha" } },
+  { name: "Itachi Uchiha", email: "itachi.uchiha@example.com", profession: "Security Engineer", address: { country: "Japan", city: "Tokyo" } },
+  { name: "Hinata Hyuga", email: "hinata.hyuga@example.com", profession: "Frontend Developer", address: { country: "Japan", city: "Kyoto" } },
+  { name: "Shikamaru Nara", email: "shikamaru.nara@example.com", profession: "Backend Developer", address: { country: "Japan", city: "Osaka" } },
+  { name: "Ino Yamanaka", email: "ino.yamanaka@example.com", profession: "UI/UX Designer", address: { country: "Japan", city: "Konoha" } },
+  { name: "Rock Lee", email: "rock.lee@example.com", profession: "DevOps Engineer", address: { country: "Japan", city: "Konoha" } },
+  { name: "Neji Hyuga", email: "neji.hyuga@example.com", profession: "Security Engineer", address: { country: "Japan", city: "Kyoto" } },
+
+  { name: "Eren Yeager", email: "eren.yeager@example.com", profession: "Frontend Developer", address: { country: "Japan", city: "Shiganshina" } },
+  { name: "Mikasa Ackerman", email: "mikasa.ackerman@example.com", profession: "Backend Developer", address: { country: "Japan", city: "Shiganshina" } },
+  { name: "Armin Arlert", email: "armin.arlert@example.com", profession: "Data Scientist", address: { country: "Japan", city: "Trost" } },
+  { name: "Levi Ackerman", email: "levi.ackerman@example.com", profession: "Security Engineer", address: { country: "Japan", city: "Trost" } },
+  { name: "Erwin Smith", email: "erwin.smith@example.com", profession: "DevOps Engineer", address: { country: "Japan", city: "Wall Rose" } },
+  { name: "Hange Zoe", email: "hange.zoe@example.com", profession: "Data Scientist", address: { country: "Japan", city: "Wall Sina" } },
+  { name: "Jean Kirstein", email: "jean.kirstein@example.com", profession: "Frontend Developer", address: { country: "Japan", city: "Trost" } },
+  { name: "Connie Springer", email: "connie.springer@example.com", profession: "Backend Developer", address: { country: "Japan", city: "Wall Rose" } },
+  { name: "Sasha Blouse", email: "sasha.blouse@example.com", profession: "UI/UX Designer", address: { country: "Japan", city: "Wall Rose" } },
+  { name: "Historia Reiss", email: "historia.reiss@example.com", profession: "UI/UX Designer", address: { country: "Japan", city: "Wall Sina" } },
+
+  { name: "Goku Son", email: "goku.son@example.com", profession: "Frontend Developer", address: { country: "Japan", city: "Tokyo" } },
+  { name: "Vegeta Prince", email: "vegeta.prince@example.com", profession: "Backend Developer", address: { country: "Japan", city: "Osaka" } },
+  { name: "Bulma Briefs", email: "bulma.briefs@example.com", profession: "UI/UX Designer", address: { country: "Japan", city: "Tokyo" } },
+  { name: "Gohan Son", email: "gohan.son@example.com", profession: "Data Scientist", address: { country: "Japan", city: "Tokyo" } },
+  { name: "Trunks Briefs", email: "trunks.briefs@example.com", profession: "Game Developer", address: { country: "Japan", city: "West City" } },
+  { name: "Piccolo Daimao", email: "piccolo.daimao@example.com", profession: "Security Engineer", address: { country: "Japan", city: "Namek" } },
+  { name: "Krillin Monk", email: "krillin.monk@example.com", profession: "DevOps Engineer", address: { country: "Japan", city: "Tokyo" } },
+  { name: "Android 18", email: "android.18@example.com", profession: "Mobile Developer", address: { country: "Japan", city: "West City" } },
+  { name: "Beerus Sama", email: "beerus.sama@example.com", profession: "DevOps Engineer", address: { country: "Japan", city: "Universe 7" } },
+  { name: "Whis Angel", email: "whis.angel@example.com", profession: "Security Engineer", address: { country: "Japan", city: "Universe 7" } },
 ];
 
-const moreUsers = [
-  "Laura Adams", "Michael Brown", "Nina Shah", "Oliver Davis", "Priya Verma", "Quinn Nelson",
-  "Ravi Kumar", "Sophie Clark", "Thomas Evans", "Uma Reddy", "Victor Hughes", "Wendy Lopez",
-  "Xavier Grant", "Yara Malik", "Zane Carter", "Bella Nguyen", "Carlos Ortega", "Diana Foster",
-  "Ethan Brooks", "Farah Ali"
-].map((name, idx) => ({
-  name,
-  email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-  password: "password123",
-  age: 22 + (idx % 10),
-  bio: "Enthusiastic learner aiming to grow in tech and collaborate with peers.",
-  profession: ["Frontend Dev", "Backend Dev", "Designer", "Data Analyst", "Mobile Dev"][idx % 5],
-  address: {
-    country: ["USA", "UK", "Canada", "India", "Germany"][idx % 5],
-    city: ["Boston", "Manchester", "Vancouver", "Delhi", "Berlin"][idx % 5],
-  },
-  socialLinks: {
-    github: `https://github.com/${name.toLowerCase().split(" ")[0]}`,
-    linkedin: `https://linkedin.com/in/${name.toLowerCase().split(" ")[0]}`
-  }
-}));
-
-const usersData = [...baseUsers, ...moreUsers].map(u => ({
-  ...u,
-  password: "password123",
-  age: u.age || 25,
-  bio: u.bio || "Passionate about learning and sharing knowledge.",
-  socialLinks: u.socialLinks || {},
-}));
-
 // -----------------------------------------------------------------------------
-// SKILLS (your 10 templates)
+// SKILLS (Global skills only created once)
 // -----------------------------------------------------------------------------
-const baseSkills = [
-  {
-    offered: [
-      { name: "React", proficiency: "Advanced", category: "Frontend" },
-      { name: "TypeScript", proficiency: "Intermediate", category: "Frontend" },
-    ],
-    required: [
-      { name: "Node.js", proficiency: "Intermediate", category: "Backend" },
-      { name: "MongoDB", proficiency: "Beginner", category: "Database" },
-    ],
-  },
-  {
-    offered: [
-      { name: "Express.js", proficiency: "Advanced", category: "Backend" },
-      { name: "MongoDB", proficiency: "Advanced", category: "Database" },
-    ],
-    required: [
-      { name: "React", proficiency: "Intermediate", category: "Frontend" },
-      { name: "Tailwind CSS", proficiency: "Beginner", category: "Frontend" },
-    ],
-  },
-  {
-    offered: [
-      { name: "Figma", proficiency: "Advanced", category: "Design" },
-      { name: "Adobe XD", proficiency: "Intermediate", category: "Design" },
-    ],
-    required: [
-      { name: "React", proficiency: "Intermediate", category: "Frontend" },
-      { name: "Framer Motion", proficiency: "Beginner", category: "Frontend" },
-    ],
-  },
-  {
-    offered: [
-      { name: "Python", proficiency: "Advanced", category: "Programming" },
-      { name: "TensorFlow", proficiency: "Intermediate", category: "AI/ML" },
-    ],
-    required: [
-      { name: "Next.js", proficiency: "Intermediate", category: "Frontend" },
-      { name: "GraphQL", proficiency: "Beginner", category: "Backend" },
-    ],
-  },
-  {
-    offered: [
-      { name: "Flutter", proficiency: "Intermediate", category: "Mobile" },
-      { name: "Firebase", proficiency: "Intermediate", category: "Backend" },
-    ],
-    required: [
-      { name: "React Native", proficiency: "Beginner", category: "Mobile" },
-      { name: "Redux", proficiency: "Beginner", category: "Frontend" },
-    ],
-  },
-  {
-    offered: [
-      { name: "AWS", proficiency: "Advanced", category: "Cloud" },
-      { name: "Docker", proficiency: "Intermediate", category: "DevOps" },
-    ],
-    required: [
-      { name: "Kubernetes", proficiency: "Beginner", category: "DevOps" },
-      { name: "CI/CD", proficiency: "Beginner", category: "DevOps" },
-    ],
-  },
-  {
-    offered: [
-      { name: "HTML", proficiency: "Advanced", category: "Frontend" },
-      { name: "CSS", proficiency: "Advanced", category: "Frontend" },
-    ],
-    required: [
-      { name: "React", proficiency: "Intermediate", category: "Frontend" },
-      { name: "TypeScript", proficiency: "Beginner", category: "Frontend" },
-    ],
-  },
-  {
-    offered: [
-      { name: "C#", proficiency: "Advanced", category: "Programming" },
-      { name: ".NET", proficiency: "Intermediate", category: "Backend" },
-    ],
-    required: [
-      { name: "React", proficiency: "Intermediate", category: "Frontend" },
-      { name: "Node.js", proficiency: "Beginner", category: "Backend" },
-    ],
-  },
-  {
-    offered: [
-      { name: "Cybersecurity", proficiency: "Advanced", category: "Security" },
-      { name: "Penetration Testing", proficiency: "Intermediate", category: "Security" },
-    ],
-    required: [
-      { name: "Cloud Security", proficiency: "Beginner", category: "Security" },
-      { name: "DevSecOps", proficiency: "Beginner", category: "Security" },
-    ],
-  },
-  {
-    offered: [
-      { name: "C++", proficiency: "Advanced", category: "Programming" },
-      { name: "Unreal Engine", proficiency: "Intermediate", category: "Game Dev" },
-    ],
-    required: [
-      { name: "Unity", proficiency: "Beginner", category: "Game Dev" },
-      { name: "Blender", proficiency: "Beginner", category: "Design" },
-    ],
-  },
+const SKILLS = [
+  { name: "React", proficiencyLevel: "expert", learningPriority: "medium", categories: ["Frontend"] },
+  { name: "TypeScript", proficiencyLevel: "intermediate", learningPriority: "medium", categories: ["Frontend"] },
+  { name: "Node.js", proficiencyLevel: "intermediate", learningPriority: "high", categories: ["Backend"] },
+  { name: "MongoDB", proficiencyLevel: "intermediate", learningPriority: "high", categories: ["Database"] },
+  { name: "Express.js", proficiencyLevel: "expert", learningPriority: "medium", categories: ["Backend"] },
+  { name: "Tailwind CSS", proficiencyLevel: "intermediate", learningPriority: "low", categories: ["Frontend"] },
+  { name: "Figma", proficiencyLevel: "expert", learningPriority: "medium", categories: ["Design"] },
+  { name: "TensorFlow", proficiencyLevel: "intermediate", learningPriority: "medium", categories: ["AI/ML"] },
+  { name: "Flutter", proficiencyLevel: "intermediate", learningPriority: "medium", categories: ["Mobile"] },
+  { name: "AWS", proficiencyLevel: "expert", learningPriority: "high", categories: ["Cloud"] },
+  { name: "Docker", proficiencyLevel: "intermediate", learningPriority: "medium", categories: ["DevOps"] },
+  { name: "Kubernetes", proficiencyLevel: "beginner", learningPriority: "high", categories: ["DevOps"] },
+  { name: "C++", proficiencyLevel: "expert", learningPriority: "low", categories: ["Programming"] },
+  { name: "Unreal Engine", proficiencyLevel: "intermediate", learningPriority: "low", categories: ["Game Dev"] },
+  { name: "Cybersecurity", proficiencyLevel: "expert", learningPriority: "high", categories: ["Security"] },
+  { name: "Penetration Testing", proficiencyLevel: "intermediate", learningPriority: "medium", categories: ["Security"] },
 ];
 
-const skillsData = Array.from({ length: usersData.length }, (_, i) => baseSkills[i % baseSkills.length]);
-
 // -----------------------------------------------------------------------------
-// SEED SCRIPT
+// Seeder Logic
 // -----------------------------------------------------------------------------
 const seedDatabase = async () => {
   try {
     console.log("🌱 Starting database seeding...");
     await connectDb();
 
-    console.log("🗑️  Clearing existing data...");
-    await User.deleteMany({});
-    await SkillModel.deleteMany({});
-    await SkillProfileModel.deleteMany({});
-    console.log("✅ Existing data cleared");
+    console.log("🗑️  Clearing old data...");
+    await Promise.all([
+      User.deleteMany({}),
+      SkillModel.deleteMany({}),
+      SkillProfileModel.deleteMany({}),
+    ]);
 
-    for (let i = 0; i < usersData.length; i++) {
-      const userData = usersData[i];
-      const skillData = skillsData[i];
+    console.log("📚 Seeding skills...");
+    const createdSkills = await SkillModel.insertMany(SKILLS);
+    const skillMap = Object.fromEntries(createdSkills.map((s) => [s.name, s._id]));
 
-      console.log(`\n👤 Creating user: ${userData.name}`);
-
-      const dicebearAvatar = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
-        userData.name || userData.email.split("@")[0]
-      )}`;
+    console.log("👥 Seeding users & skill profiles...");
+    for (const userData of USERS) {
+      const avatarUrl = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(userData.name)}`;
 
       const user = await User.create({
         ...userData,
-        profileImage: dicebearAvatar,
+        password: "password123",
+        profileImage: avatarUrl,
+        bio: "Passionate learner eager to exchange skills and collaborate.",
       });
-      console.log(`   ✓ User created with ID: ${user._id}`);
 
-      const offeredSkillIds = [];
-      for (const skill of skillData.offered) {
-        const createdSkill = await SkillModel.create(skill);
-        offeredSkillIds.push(createdSkill._id);
+      let offered = [];
+      let required = [];
+
+      switch (user.profession) {
+        case "Frontend Developer":
+          offered = [skillMap["React"], skillMap["TypeScript"]];
+          required = [skillMap["Node.js"], skillMap["MongoDB"]];
+          break;
+        case "Backend Developer":
+          offered = [skillMap["Node.js"], skillMap["Express.js"]];
+          required = [skillMap["React"], skillMap["Tailwind CSS"]];
+          break;
+        case "UI/UX Designer":
+          offered = [skillMap["Figma"]];
+          required = [skillMap["React"], skillMap["TypeScript"]];
+          break;
+        case "Data Scientist":
+          offered = [skillMap["TensorFlow"], skillMap["Python"]];
+          required = [skillMap["MongoDB"], skillMap["Node.js"]];
+          break;
+        case "Mobile Developer":
+          offered = [skillMap["Flutter"]];
+          required = [skillMap["React"], skillMap["Firebase"]];
+          break;
+        case "DevOps Engineer":
+          offered = [skillMap["AWS"], skillMap["Docker"]];
+          required = [skillMap["Kubernetes"], skillMap["CI/CD"]];
+          break;
+        case "Security Engineer":
+          offered = [skillMap["Cybersecurity"], skillMap["Penetration Testing"]];
+          required = [skillMap["Docker"], skillMap["AWS"]];
+          break;
+        case "Game Developer":
+          offered = [skillMap["C++"], skillMap["Unreal Engine"]];
+          required = [skillMap["React"], skillMap["Blender"]];
+          break;
+        default:
+          offered = [skillMap["React"]];
+          required = [skillMap["Node.js"]];
+          break;
       }
 
-      const requiredSkillIds = [];
-      for (const skill of skillData.required) {
-        const createdSkill = await SkillModel.create(skill);
-        requiredSkillIds.push(createdSkill._id);
-      }
-
-      const skillProfile = await SkillProfileModel.create({
+      const profile = await SkillProfileModel.create({
         userId: user._id,
-        offeredSkills: offeredSkillIds,
-        requiredSkills: requiredSkillIds,
-        rating: Math.random() * 2 + 3,
-        totalExchanges: Math.floor(Math.random() * 20),
+        offeredSkills: offered.filter(Boolean),
+        requiredSkills: required.filter(Boolean),
+        rating: parseFloat((Math.random() * 1.5 + 3.5).toFixed(1)),
+        totalExchanges: Math.floor(Math.random() * 15),
         metrics: {
-          pendingRequests: Math.floor(Math.random() * 5),
+          pendingRequests: Math.floor(Math.random() * 4),
           acceptedRequests: Math.floor(Math.random() * 10),
           completedRequests: Math.floor(Math.random() * 8),
-          rejectedRequests: Math.floor(Math.random() * 3)
-        }
+          rejectedRequests: Math.floor(Math.random() * 3),
+        },
       });
 
-      console.log(`   ✓ Skill profile created with rating: ${skillProfile.rating.toFixed(2)}`);
+      console.log(`✅ ${user.name} → SkillProfile created (Rating: ${profile.rating})`);
     }
 
     console.log("\n✨ Database seeding completed successfully!");
-  } catch (error) {
-    console.error("❌ Error seeding database:", error);
-    process.exit(1);
+  } catch (err) {
+    console.error("❌ Error seeding database:", err);
   } finally {
     await mongoose.connection.close();
-    console.log("\n👋 Database connection closed");
-    process.exit(0);
+    console.log("🔒 Connection closed");
   }
 };
 
