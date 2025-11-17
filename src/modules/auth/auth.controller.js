@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { User } from "../../models/index.js";
-import { getAvailableSuggestions } from "../../utils/helpers.js";
 import { ApiError, ApiResponse, asyncHandler } from "../../utils/index.js"
+import { SkillProfileModel } from "../../models/skillProfile.model.js";
 
 const options = {
     httpOnly: true,
@@ -61,32 +61,28 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const signup = asyncHandler(async (req, res) => {
-    const { email, username } = req.body;
+    const { email, name } = req.body;
 
-    const existingUser = await User.findOne({
-        $or: [{ email }, { username }],
-    }).lean();
-
+    const existingUser = await User.findOne({ email }).lean();
     if (existingUser) {
-        let message = "User already exists with this ";
-        let suggestions = [];
-        if (existingUser.email === email && existingUser.username === username) {
-            message += "email and username";
-        } else if (existingUser.email === email) {
-            message += "email";
-        } else {
-            message += "username";
-            suggestions = await getAvailableSuggestions(username, 3);
-            throw new ApiError(409, message, suggestions);
-        }
-
-        throw new ApiError(409, message);
+        throw new ApiError(409, "User already exists with this email");
     }
 
-    const user = await User.create({ ...req.body });
+    // 🧩 Generate a default avatar using DiceBear (you can pick any style)
+    const dicebearAvatar = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(name || email.split("@")[0])}`;
+
+    // 🆕 Create user with default avatar
+    const user = await User.create({
+        ...req.body,
+        profileImage: dicebearAvatar
+    });
 
     user.lastLogin = new Date();
     await user.save();
+
+    await SkillProfileModel.create({
+        userId: user._id,
+    });
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
@@ -103,18 +99,16 @@ const signup = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-    const { credential, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!credential || !password) {
-        throw new ApiError(400, "Credential and password are required");
+    if (!email || !password) {
+        throw new ApiError(400, "Email and password are required");
     }
 
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credential);
-
-    const user = await User.findOne(isEmail ? { email: credential } : { username: credential });
+    const user = await User.findOne({ email: email });
 
     if (!user) {
-        throw new ApiError(404, "Invalid username or email");
+        throw new ApiError(404, "User not found with specified Email");
     }
 
     const doesPasswordMatch = await user.isPasswordCorrect(password);

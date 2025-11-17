@@ -1,3 +1,1 @@
-import { User } from "./user/user.model.js";
-
-export { User };
+export * from "./user.model.js"

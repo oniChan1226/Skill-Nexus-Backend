@@ -10,12 +10,6 @@ const userSchema = new mongoose.Schema({
     age: {
         type: Number,
     },
-    username: {
-        type: String,
-        required: [true, "username is required"],
-        unique: true,
-        index: true,
-    },
     email: {
         type: String,
         required: [true, "email is required"],
@@ -42,6 +36,9 @@ const userSchema = new mongoose.Schema({
         country: String,
         city: String,
     },
+    profession: {
+        type: String
+    },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     lastLogin: Date,
     refreshToken: {
@@ -54,7 +51,18 @@ const userSchema = new mongoose.Schema({
         twitter: { type: String, default: "" },
         portfolio: { type: String, default: "" },
     },
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+    transform: function (doc, ret) {
+        delete ret.password;
+        delete ret.refreshToken;
+        delete ret.__v;
+
+        return ret;
+    }
+});
 
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
