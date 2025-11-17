@@ -3,9 +3,14 @@ import { User } from "../../models/index.js";
 import { ApiError, ApiResponse, asyncHandler } from "../../utils/index.js"
 import { SkillProfileModel } from "../../models/skillProfile.model.js";
 
+const isProduction = process.env.ENVIRONMENT === "production";
+console.log(isProduction)
+
 const options = {
     httpOnly: true,
-    secure: false,
+    secure: isProduction,           // required for https
+    sameSite: isProduction ? "none" : "lax",       // required for cross-site cookies
+    path: "/",              // always good to add
 };
 
 const generateAccessAndRefreshToken = async function (userId) {
