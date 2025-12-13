@@ -54,7 +54,7 @@ export const getSentTradeRequests = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, trades, "Sent trades retrieved"));
+    .json(new ApiResponse(200, {trades}, "Sent trades retrieved"));
 });
 
 /**
@@ -70,7 +70,7 @@ export const getReceivedTradeRequests = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, trades, "Received trades retrieved"));
+    .json(new ApiResponse(200, {trades}, "Received trades retrieved"));
 });
 
 /**

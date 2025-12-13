@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node -r dotenv/config src/index.js",
     "dev": "nodemon -r dotenv/config src/index.js",
-    "seed": "node -r dotenv/config src/seeds/seedData.js"
+    "seed": "node -r dotenv/config src/seeds/seedData.js",
+    "demo:ai": "node src/tests/testCustomAI.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
