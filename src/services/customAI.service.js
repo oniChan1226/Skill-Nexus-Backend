@@ -223,6 +223,214 @@ class CustomAIService {
     }
 
     // ---------------------------
+    // Analyze Prerequisites for Target Skill
+    // ---------------------------
+    analyzePrerequisites(targetSkill) {
+        const skillLower = targetSkill.toLowerCase();
+        const prerequisites = [];
+
+        // Skill prerequisite knowledge base
+        const skillPrerequisiteMap = {
+            // Web Development
+            'react': {
+                foundation: ['HTML', 'CSS', 'JavaScript'],
+                core: ['ES6+', 'Component Architecture', 'State Management'],
+                advanced: ['Hooks', 'Context API', 'React Router', 'Performance Optimization']
+            },
+            'vue': {
+                foundation: ['HTML', 'CSS', 'JavaScript'],
+                core: ['ES6+', 'Component-Based Design', 'Vue Router'],
+                advanced: ['Vuex', 'Composition API', 'SSR with Nuxt']
+            },
+            'angular': {
+                foundation: ['HTML', 'CSS', 'JavaScript', 'TypeScript'],
+                core: ['TypeScript Advanced', 'RxJS', 'Dependency Injection'],
+                advanced: ['NgRx', 'Angular Universal', 'Testing']
+            },
+            'node': {
+                foundation: ['JavaScript', 'Command Line Basics'],
+                core: ['ES6+', 'Async Programming', 'Express.js', 'RESTful APIs'],
+                advanced: ['Database Integration', 'Authentication', 'WebSockets', 'Microservices']
+            },
+            'full stack': {
+                foundation: ['HTML', 'CSS', 'JavaScript'],
+                core: ['Frontend Framework (React/Vue)', 'Node.js', 'Database (SQL/NoSQL)', 'REST APIs'],
+                advanced: ['Authentication', 'Deployment', 'DevOps Basics', 'Testing']
+            },
+            
+            // Data Science & ML
+            'machine learning': {
+                foundation: ['Python', 'Mathematics (Linear Algebra)', 'Statistics', 'Probability'],
+                core: ['NumPy', 'Pandas', 'Scikit-learn', 'Data Preprocessing'],
+                advanced: ['Deep Learning', 'Neural Networks', 'Model Deployment', 'TensorFlow/PyTorch']
+            },
+            'data science': {
+                foundation: ['Python', 'Mathematics', 'Statistics'],
+                core: ['Pandas', 'NumPy', 'Data Visualization', 'SQL'],
+                advanced: ['Machine Learning', 'Feature Engineering', 'Big Data Tools']
+            },
+            'deep learning': {
+                foundation: ['Python', 'Linear Algebra', 'Calculus', 'Probability'],
+                core: ['Machine Learning Basics', 'Neural Networks', 'Backpropagation'],
+                advanced: ['CNN', 'RNN', 'Transformers', 'TensorFlow/PyTorch']
+            },
+            'artificial intelligence': {
+                foundation: ['Python', 'Mathematics', 'Algorithms', 'Data Structures'],
+                core: ['Machine Learning', 'Neural Networks', 'Search Algorithms'],
+                advanced: ['Deep Learning', 'NLP', 'Computer Vision', 'Reinforcement Learning']
+            },
+            
+            // Mobile Development
+            'react native': {
+                foundation: ['JavaScript', 'React'],
+                core: ['Mobile UI/UX', 'Native Components', 'Navigation'],
+                advanced: ['Native Modules', 'Performance', 'App Deployment']
+            },
+            'flutter': {
+                foundation: ['Dart', 'OOP Concepts'],
+                core: ['Widget System', 'State Management', 'Material Design'],
+                advanced: ['Platform Integration', 'Animations', 'App Publishing']
+            },
+            'ios development': {
+                foundation: ['Swift', 'Xcode', 'OOP'],
+                core: ['UIKit', 'SwiftUI', 'App Architecture'],
+                advanced: ['Core Data', 'Networking', 'App Store Deployment']
+            },
+            
+            // Backend & Databases
+            'mongodb': {
+                foundation: ['Database Concepts', 'JSON'],
+                core: ['CRUD Operations', 'Indexing', 'Aggregation'],
+                advanced: ['Replication', 'Sharding', 'Performance Tuning']
+            },
+            'postgresql': {
+                foundation: ['SQL Basics', 'Database Design'],
+                core: ['Advanced SQL', 'Indexing', 'Transactions'],
+                advanced: ['Query Optimization', 'Replication', 'Stored Procedures']
+            },
+            'graphql': {
+                foundation: ['REST APIs', 'JSON', 'JavaScript'],
+                core: ['Schema Definition', 'Queries', 'Mutations'],
+                advanced: ['Subscriptions', 'Resolvers', 'Apollo Server']
+            },
+            
+            // DevOps & Cloud
+            'docker': {
+                foundation: ['Command Line', 'Networking Basics'],
+                core: ['Containerization', 'Dockerfile', 'Docker Compose'],
+                advanced: ['Multi-stage Builds', 'Orchestration', 'Security']
+            },
+            'kubernetes': {
+                foundation: ['Docker', 'Networking', 'YAML'],
+                core: ['Pods', 'Services', 'Deployments', 'ConfigMaps'],
+                advanced: ['Helm', 'Service Mesh', 'Monitoring', 'Auto-scaling']
+            },
+            'aws': {
+                foundation: ['Cloud Computing Basics', 'Networking'],
+                core: ['EC2', 'S3', 'IAM', 'VPC'],
+                advanced: ['Lambda', 'ECS/EKS', 'CloudFormation', 'Cost Optimization']
+            },
+            
+            // Design
+            'ui design': {
+                foundation: ['Design Principles', 'Color Theory', 'Typography'],
+                core: ['Figma/Sketch', 'Wireframing', 'Prototyping'],
+                advanced: ['Design Systems', 'Accessibility', 'User Research']
+            },
+            'ux design': {
+                foundation: ['User Psychology', 'Design Thinking'],
+                core: ['User Research', 'Wireframing', 'Usability Testing'],
+                advanced: ['Information Architecture', 'Interaction Design', 'Analytics']
+            }
+        };
+
+        // Find matching skill patterns
+        let matched = false;
+        for (const [skill, prereqMap] of Object.entries(skillPrerequisiteMap)) {
+            if (skillLower.includes(skill) || skill.includes(skillLower)) {
+                matched = true;
+                
+                // Foundation phase
+                prereqMap.foundation?.forEach(prereq => {
+                    prerequisites.push({
+                        skill: prereq,
+                        phase: 'foundation',
+                        reason: `Fundamental knowledge required for ${targetSkill}`,
+                        estimatedTime: '1-2 weeks',
+                        importance: 'high'
+                    });
+                });
+                
+                // Core phase
+                prereqMap.core?.forEach(prereq => {
+                    prerequisites.push({
+                        skill: prereq,
+                        phase: 'core',
+                        reason: `Essential skill directly related to ${targetSkill}`,
+                        estimatedTime: '2-3 weeks',
+                        importance: 'critical'
+                    });
+                });
+                
+                // Advanced phase
+                prereqMap.advanced?.forEach(prereq => {
+                    prerequisites.push({
+                        skill: prereq,
+                        phase: 'advanced',
+                        reason: `Advanced concept to master ${targetSkill}`,
+                        estimatedTime: '1-2 weeks',
+                        importance: 'medium'
+                    });
+                });
+                
+                break;
+            }
+        }
+
+        // If no exact match, use embedding-based analysis
+        if (!matched) {
+            const targetEmbedding = this.generateEmbedding(targetSkill);
+            
+            // Generic prerequisites based on category detection
+            const categoryIdx = targetEmbedding.slice(0, 6);
+            const maxIdx = categoryIdx.indexOf(Math.max(...categoryIdx));
+            const categories = ['programming', 'design', 'data', 'marketing', 'business', 'creative'];
+            const detectedCategory = categories[maxIdx];
+            
+            // Default prerequisites by category
+            const defaultPrereqs = {
+                programming: [
+                    { skill: 'Programming Fundamentals', phase: 'foundation', estimatedTime: '2-3 weeks' },
+                    { skill: 'Problem Solving', phase: 'foundation', estimatedTime: '1-2 weeks' },
+                    { skill: 'Version Control (Git)', phase: 'core', estimatedTime: '1 week' },
+                    { skill: 'Best Practices', phase: 'advanced', estimatedTime: '1-2 weeks' }
+                ],
+                design: [
+                    { skill: 'Design Principles', phase: 'foundation', estimatedTime: '1-2 weeks' },
+                    { skill: 'Design Tools', phase: 'core', estimatedTime: '2-3 weeks' },
+                    { skill: 'User Research', phase: 'advanced', estimatedTime: '1-2 weeks' }
+                ],
+                data: [
+                    { skill: 'Statistics', phase: 'foundation', estimatedTime: '2-3 weeks' },
+                    { skill: 'Data Analysis Tools', phase: 'core', estimatedTime: '2-3 weeks' },
+                    { skill: 'Advanced Analytics', phase: 'advanced', estimatedTime: '2-3 weeks' }
+                ]
+            };
+            
+            const categoryPrereqs = defaultPrereqs[detectedCategory] || [];
+            categoryPrereqs.forEach(prereq => {
+                prerequisites.push({
+                    ...prereq,
+                    reason: `Recommended for learning ${targetSkill}`,
+                    importance: 'medium'
+                });
+            });
+        }
+
+        return prerequisites;
+    }
+
+    // ---------------------------
     // Helper Functions
     // ---------------------------
     randomMatrix(rows, cols) {

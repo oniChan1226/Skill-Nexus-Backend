@@ -97,7 +97,7 @@ export const getRecommendedUsers = asyncHandler(async (req, res) => {
 
     // Rank users using AI
     const rankedUsers = [];
-    
+
     for (const otherUser of otherUsers) {
         const skillMatch = await AIService.calculateBidirectionalMatch(
             {
@@ -421,7 +421,7 @@ export const getMutualMatches = asyncHandler(async (req, res) => {
     return res.status(200).json(
         new ApiResponse(
             200,
-            { 
+            {
                 matches: topMatches,
                 totalMutualMatches: mutualMatches.length
             },
@@ -450,8 +450,8 @@ export const getCustomSkillSimilarity = asyncHandler(async (req, res) => {
                 skill1,
                 skill2,
                 similarityScore: similarity,
-                interpretation: similarity > 0.7 ? "Highly Similar" : 
-                               similarity > 0.4 ? "Moderately Similar" : "Different",
+                interpretation: similarity > 0.7 ? "Highly Similar" :
+                    similarity > 0.4 ? "Moderately Similar" : "Different",
                 method: "Custom Neural Network (2-Layer Feed-Forward)"
             },
             "Skill similarity calculated using custom AI"
@@ -471,7 +471,7 @@ export const getCustomLearningPath = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Target skill is required");
     }
 
-    // Get user's current skills
+    // Get user's current skills with proficiency levels
     const userProfile = await SkillProfileModel.findOne({ userId: user._id })
         .populate("offeredSkills");
 
@@ -479,19 +479,261 @@ export const getCustomLearningPath = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Skill profile not found");
     }
 
-    const currentSkills = userProfile.offeredSkills.map(s => s.skillName);
-    const learningPath = customAI.predictLearningPath(currentSkills, targetSkill);
+    const currentSkills = userProfile.offeredSkills.map(s => ({
+        name: s.name,
+        proficiency: s.proficiencyLevel || 'beginner'
+    }));
+
+    // Generate target skill embedding
+    const targetEmbedding = customAI.generateEmbedding(targetSkill);
+    
+    // Find prerequisite skills based on target skill analysis
+    const prerequisites = customAI.analyzePrerequisites(targetSkill);
+    
+    // Calculate skill gaps using similarity scoring
+    const currentSkillNames = currentSkills.map(s => s.name);
+    const missingPrerequisites = [];
+    const existingPrerequisites = [];
+    
+    // Check each prerequisite against user's current skills
+    prerequisites.forEach(prereq => {
+        let isExisting = false;
+        let maxSimilarity = 0;
+        let matchedSkill = null;
+        
+        // Check if user already has this skill or something similar
+        for (const userSkill of currentSkillNames) {
+            const similarity = customAI.calculateSkillSimilarity(
+                userSkill.toLowerCase(), 
+                prereq.skill.toLowerCase()
+            );
+            
+            if (similarity > maxSimilarity) {
+                maxSimilarity = similarity;
+                matchedSkill = userSkill;
+            }
+            
+            // Lower threshold to 0.4 for better matching (was 0.5)
+            // Also handle broad skills like "Web Development" matching specific skills
+            const userSkillLower = userSkill.toLowerCase();
+            const prereqLower = prereq.skill.toLowerCase();
+            
+            // Direct similarity check
+            if (similarity > 0.4) {
+                isExisting = true;
+                break;
+            }
+            
+            // Special handling for broad skills
+            if (userSkillLower.includes('web development') || userSkillLower.includes('full stack')) {
+                // Web Development should cover HTML, CSS, JavaScript, Frontend basics
+                if (prereqLower.includes('html') || 
+                    prereqLower.includes('css') || 
+                    prereqLower.includes('javascript') ||
+                    prereqLower.includes('frontend')) {
+                    isExisting = true;
+                    break;
+                }
+            }
+            
+            if (userSkillLower.includes('frontend') || userSkillLower.includes('front-end')) {
+                if (prereqLower.includes('html') || 
+                    prereqLower.includes('css') || 
+                    prereqLower.includes('javascript') ||
+                    prereqLower.includes('react') ||
+                    prereqLower.includes('vue') ||
+                    prereqLower.includes('ui')) {
+                    isExisting = true;
+                    break;
+                }
+            }
+            
+            if (userSkillLower.includes('backend') || userSkillLower.includes('back-end')) {
+                if (prereqLower.includes('node') || 
+                    prereqLower.includes('database') || 
+                    prereqLower.includes('api') ||
+                    prereqLower.includes('server')) {
+                    isExisting = true;
+                    break;
+                }
+            }
+        }
+        
+        if (isExisting) {
+            existingPrerequisites.push({ 
+                ...prereq, 
+                matchedSimilarity: maxSimilarity,
+                matchedWith: matchedSkill 
+            });
+        } else {
+            missingPrerequisites.push(prereq);
+        }
+    });
+
+    // Calculate readiness score (higher weight on target-specific prerequisites)
+    const readinessScore = Math.min(
+        100,
+        (existingPrerequisites.length / Math.max(prerequisites.length, 1)) * 100
+    );
+
+    // Generate progressive learning steps
+    const learningSteps = [];
+    
+    // Phase 1: Foundation skills (if needed)
+    if (missingPrerequisites.some(p => p.phase === 'foundation')) {
+        learningSteps.push({
+            phase: 1,
+            title: "Foundation Skills",
+            description: `Build fundamental knowledge required for ${targetSkill}`,
+            duration: "2-4 weeks",
+            skills: missingPrerequisites
+                .filter(p => p.phase === 'foundation')
+                .map(p => ({
+                    skill: p.skill,
+                    reason: p.reason,
+                    priority: "HIGH",
+                    estimatedTime: p.estimatedTime,
+                    similarityToTarget: customAI.calculateSkillSimilarity(p.skill, targetSkill)
+                }))
+                .sort((a, b) => b.similarityToTarget - a.similarityToTarget)
+        });
+    }
+
+    // Phase 2: Core prerequisites
+    if (missingPrerequisites.some(p => p.phase === 'core')) {
+        learningSteps.push({
+            phase: 2,
+            title: "Core Prerequisites",
+            description: `Essential skills directly related to ${targetSkill}`,
+            duration: "4-6 weeks",
+            skills: missingPrerequisites
+                .filter(p => p.phase === 'core')
+                .map(p => ({
+                    skill: p.skill,
+                    reason: p.reason,
+                    priority: "CRITICAL",
+                    estimatedTime: p.estimatedTime,
+                    similarityToTarget: customAI.calculateSkillSimilarity(p.skill, targetSkill)
+                }))
+                .sort((a, b) => b.similarityToTarget - a.similarityToTarget)
+        });
+    }
+
+    // Phase 3: Advanced/Specialized skills
+    if (missingPrerequisites.some(p => p.phase === 'advanced')) {
+        learningSteps.push({
+            phase: 3,
+            title: "Advanced Concepts",
+            description: `Specialized knowledge for mastering ${targetSkill}`,
+            duration: "3-5 weeks",
+            skills: missingPrerequisites
+                .filter(p => p.phase === 'advanced')
+                .map(p => ({
+                    skill: p.skill,
+                    reason: p.reason,
+                    priority: "MEDIUM",
+                    estimatedTime: p.estimatedTime,
+                    similarityToTarget: customAI.calculateSkillSimilarity(p.skill, targetSkill)
+                }))
+                .sort((a, b) => b.similarityToTarget - a.similarityToTarget)
+        });
+    }
+
+    // Phase 4: Target skill mastery
+    learningSteps.push({
+        phase: learningSteps.length + 1,
+        title: `Master ${targetSkill}`,
+        description: "Hands-on practice and real-world application",
+        duration: "6-8 weeks",
+        skills: [{
+            skill: targetSkill,
+            reason: "Your target skill - focus on practical projects and real-world scenarios",
+            priority: "TARGET",
+            estimatedTime: "Ongoing",
+            similarityToTarget: 1.0
+        }]
+    });
+
+    // Calculate total estimated time
+    const totalWeeks = learningSteps.reduce((sum, step) => {
+        const weeks = parseInt(step.duration.split('-')[0]) || 0;
+        return sum + weeks;
+    }, 0);
+
+    // Generate personalized recommendations
+    const recommendations = {
+        startWith: learningSteps[0]?.skills[0]?.skill || targetSkill,
+        focusAreas: missingPrerequisites
+            .filter(p => p.phase === 'core')
+            .map(p => p.skill)
+            .slice(0, 3),
+        leverageExisting: [
+            ...currentSkills
+                .filter(s => {
+                    const similarity = customAI.calculateSkillSimilarity(s.name, targetSkill);
+                    return similarity > 0.25; // Lower threshold to show more relevant skills
+                })
+                .map(s => s.name)
+                .slice(0, 5),
+            // Also include skills that matched prerequisites
+            ...existingPrerequisites
+                .map(p => p.matchedWith)
+                .filter((v, i, a) => v && a.indexOf(v) === i) // Remove duplicates
+        ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 5), // Final deduplication
+        studyApproach: readinessScore > 70 
+            ? "You have a strong foundation! Focus on specialized aspects and practical projects."
+            : readinessScore > 40
+            ? "Build core prerequisites first, then move to hands-on practice."
+            : readinessScore > 20
+            ? "You have some foundational knowledge. Focus on filling gaps and building core skills."
+            : "Start with fundamentals and gradually progress to more advanced topics.",
+        estimatedTimeToTarget: `${totalWeeks}-${totalWeeks + 4} weeks with consistent practice`
+    };
+
+    // Find potential mentors/teachers
+    const potentialMentors = await SkillProfileModel.find({
+        userId: { $ne: user._id },
+        offeredSkills: { 
+            $elemMatch: { 
+                name: { $regex: new RegExp(targetSkill, 'i') },
+                proficiencyLevel: { $in: ['intermediate', 'expert'] }
+            }
+        }
+    })
+        .populate('offeredSkills')
+        .populate('userId', 'name profession profileImage')
+        .limit(5);
+
+    const mentors = potentialMentors.map(profile => ({
+        id: profile.userId._id,
+        name: profile.userId.name,
+        profession: profile.userId.profession,
+        profileImage: profile.userId.profileImage,
+        skillLevel: profile.offeredSkills.find(s => 
+            s.name.toLowerCase().includes(targetSkill.toLowerCase())
+        )?.proficiencyLevel || 'intermediate',
+        rating: profile.rating
+    }));
 
     return res.status(200).json(
         new ApiResponse(
             200,
             {
                 targetSkill,
-                currentSkills: currentSkills.slice(0, 10),
-                recommendedLearningPath: learningPath,
-                totalCurrentSkills: currentSkills.length
+                readinessScore: Math.round(readinessScore),
+                readinessLevel: readinessScore > 70 ? "Ready" : readinessScore > 40 ? "Moderate" : "Beginner",
+                currentSkillsCount: currentSkills.length,
+                learningPath: learningSteps,
+                recommendations,
+                mentorsAvailable: mentors,
+                gapAnalysis: {
+                    totalPrerequisites: prerequisites.length,
+                    skillsYouHave: existingPrerequisites.length,
+                    skillsToLearn: missingPrerequisites.length,
+                    estimatedTotalTime: recommendations.estimatedTimeToTarget
+                }
             },
-            "Learning path predicted using custom AI model"
+            "Personalized learning path generated successfully"
         )
     );
 });
@@ -514,8 +756,8 @@ export const getCustomAdvancedMatches = asyncHandler(async (req, res) => {
     }
 
     // Get all other users
-    const otherProfiles = await SkillProfileModel.find({ 
-        userId: { $ne: user._id } 
+    const otherProfiles = await SkillProfileModel.find({
+        userId: { $ne: user._id }
     })
         .populate("offeredSkills")
         .populate("requiredSkills")
@@ -524,10 +766,10 @@ export const getCustomAdvancedMatches = asyncHandler(async (req, res) => {
     // Calculate custom AI similarity for each user
     const matches = [];
     for (const profile of otherProfiles) {
-        const currentOffered = currentUserProfile.offeredSkills.map(s => s.skillName);
-        const currentRequired = currentUserProfile.requiredSkills.map(s => s.skillName);
-        const otherOffered = profile.offeredSkills.map(s => s.skillName);
-        const otherRequired = profile.requiredSkills.map(s => s.skillName);
+        const currentOffered = currentUserProfile?.offeredSkills?.map(s => s.name);
+        const currentRequired = currentUserProfile?.requiredSkills?.map(s => s.name);
+        const otherOffered = profile?.offeredSkills?.map(s => s.name);
+        const otherRequired = profile?.requiredSkills?.map(s => s.name);
 
         // Forward match: My required vs their offered
         const forwardScore = customAI.calculateUserSimilarity(
@@ -601,8 +843,8 @@ export const getCustomProficiencyEstimate = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Skill profile not found");
     }
 
-    const relatedSkills = userProfile.offeredSkills.map(s => s.skillName);
-    const userRatings = userProfile.offeredSkills.map(s => s.proficiencyLevel || 3);
+    const relatedSkills = userProfile?.offeredSkills?.map(s => s.name);
+    const userRatings = userProfile?.offeredSkills?.map(s => s.proficiencyLevel || 3);
 
     const estimatedProficiency = customAI.estimateProficiency(
         skillName,
@@ -617,7 +859,7 @@ export const getCustomProficiencyEstimate = asyncHandler(async (req, res) => {
                 skillName,
                 estimatedProficiency: Math.round(estimatedProficiency * 10) / 10,
                 proficiencyLevel: estimatedProficiency >= 4 ? "Advanced" :
-                                 estimatedProficiency >= 3 ? "Intermediate" : "Beginner",
+                    estimatedProficiency >= 3 ? "Intermediate" : "Beginner",
                 basedOnSkills: relatedSkills.length,
                 method: "Weighted similarity-based estimation"
             },
